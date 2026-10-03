@@ -1,1 +1,70 @@
 
+name: Build Edy P2P Chat APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip curl wget \
+            autoconf automake autopoint gettext \
+            libtool libltdl-dev pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            cmake libffi-dev libssl-dev \
+            build-essential ccache
+
+      - name: Install Buildozer
+        run: |
+          python -m pip install --upgrade pip setuptools
+          python -m pip install buildozer
+          python -m pip install "cython==0.29.34"
+
+      - name: Verify environment
+        run: |
+          python --version
+          buildozer --version
+          cython --version
+
+      - name: Clean
+        run: |
+          rm -rf .buildozer
+          rm -rf bin
+
+      - name: Build APK
+        run: |
+          buildozer -v android debug
+
+      - name: List APK
+        run: |
+          find bin -type f -name "*.apk" -print
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Edy-P2P-Chat-APK
+          path: bin/*.apk
+          if-no-files-found: error
